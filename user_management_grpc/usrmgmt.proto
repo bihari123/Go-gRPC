@@ -1,0 +1,21 @@
+syntax ="proto3";
+
+package usrmgmt;
+
+option go_package="example.com/usrmgmt";
+
+service UserManagement{
+  // Unary request where the server gets a single
+  //request and it returns a single response
+  rpc CreateNewUser (NewUser) returns (User){}
+}
+message  NewUser {
+  string name =1;
+  int32 age =2;
+}
+
+message User {
+  string name = 1;
+  int32 age=2;
+  int32 id=3;
+}
