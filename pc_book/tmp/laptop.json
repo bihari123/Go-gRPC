@@ -1,0 +1,62 @@
+{
+ "id": "d5cb568b-48c8-488f-9387-36b36b0ab4e3",
+ "brand": "Lenovo",
+ "name": "Thinkpad XI",
+ "cpu": {
+  "brand": "AMD",
+  "name": "Ryzen 3 PRO 3200GE",
+  "number_cores": 8,
+  "number_threads": 0,
+  "min_ghz": 3.7170576821677734,
+  "max_ghz": 3.866903210955717
+ },
+ "ram": {
+  "value": "39",
+  "unit": "GIGABYTE"
+ },
+ "gpus": [
+  {
+   "brand": "NVIDIA",
+   "name": "RTX 2060",
+   "min_ghz": 1.772818942753098,
+   "max_ghz": 2.771302490299253,
+   "memory": {
+    "value": "4",
+    "unit": "GIGABYTE"
+   }
+  }
+ ],
+ "storages": [
+  {
+   "driver": "HDD",
+   "memory": {
+    "value": "6",
+    "unit": "TERABYTE"
+   }
+  },
+  {
+   "driver": "SSD",
+   "memory": {
+    "value": "618",
+    "unit": "GIGABYTE"
+   }
+  }
+ ],
+ "screen": {
+  "size_inch": 14.415171,
+  "resolution": {
+   "width": 7589,
+   "height": 4269
+  },
+  "panel": "IPS",
+  "multitouch": true
+ },
+ "keyboard": {
+  "layout": "AZERTY",
+  "backlit": true
+ },
+ "weight_kg": 2.082614250570718,
+ "price_usd": 2356.580587382605,
+ "release_year": 2018,
+ "updated_at": "2022-12-16T17:34:50.234507389Z"
+}
