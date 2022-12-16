@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pcbook;
+
+message Memory {
+  enum Unit {
+    UNKNOWN = 0;
+    BIT = 1;
+    BYTE = 3;
+    KILOBYTE = 4;
+    MEGABYTE = 5;
+    GIGABYTE = 6;
+    TERABYTE = 7;
+  }
+  uint64 value = 1;
+  Unit unit = 2;
+}
