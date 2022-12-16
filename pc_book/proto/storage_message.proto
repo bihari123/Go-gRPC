@@ -1,0 +1,5 @@
+syntax = "proto3";
+package pcbook;
+
+import "proto/memory_message.proto";
+import "proto/processor_message.proto";
