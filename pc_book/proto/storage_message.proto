@@ -1,5 +1,7 @@
 syntax = "proto3";
 package pcbook;
 
-import "proto/memory_message.proto";
+/* import "proto/memory_message.proto"; */
 import "proto/processor_message.proto";
+
+option go_package = "proto;storage_message";

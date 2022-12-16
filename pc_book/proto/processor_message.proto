@@ -4,6 +4,8 @@ package pcbook;
 
 import "proto/memory_message.proto";
 
+option go_package = "proto;processor_message";
+
 message CPU {
   string brand = 1;
   string name = 2;
