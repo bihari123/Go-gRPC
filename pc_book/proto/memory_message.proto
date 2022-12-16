@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pcbook;
 
-option go_package = "proto;memory_message";
+option go_package = "./;pcbook";
 message Memory {
   enum Unit {
     UNKNOWN = 0;
