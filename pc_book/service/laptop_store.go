@@ -10,6 +10,7 @@ import (
 
 type LaptopStore interface {
 	Save(laptop *pcbook.Laptop) error
+	Find(id string) (*pcbook.Laptop, error)
 }
 
 type InMemoryLaptopStore struct {
@@ -42,4 +43,23 @@ func (store *InMemoryLaptopStore) Save(laptop *pcbook.Laptop) error {
 
 	store.data[other.Id] = other
 	return nil
+}
+
+func (store *InMemoryLaptopStore) Find(id string) (*pcbook.Laptop, error) {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+
+	laptop := store.data[id]
+
+	if laptop == nil {
+		return nil, nil
+	}
+
+	other := &pcbook.Laptop{}
+	err := copier.Copy(other, laptop)
+	if err != nil {
+		return nil, fmt.Errorf("error while deep copying :%w", err)
+	}
+
+	return other, err
 }
