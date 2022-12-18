@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	pcbook "pcbook/proto"
-	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -15,11 +14,12 @@ import (
 
 type LaptopServer struct {
 	pcbook.UnimplementedLaptopServiceServer
-	Store LaptopStore
+	LaptopStore LaptopStore
+	ImageStore  ImageStore
 }
 
-func NewLaptopServer(store LaptopStore) *LaptopServer {
-	return &LaptopServer{Store: store}
+func NewLaptopServer(laptopstore LaptopStore, imageStore ImageStore) *LaptopServer {
+	return &LaptopServer{LaptopStore: laptopstore, ImageStore: imageStore}
 }
 
 func (server *LaptopServer) CreateLaptop(
@@ -44,7 +44,7 @@ func (server *LaptopServer) CreateLaptop(
 		laptop.Id = id.String()
 	}
 
-	time.Sleep(6 * time.Second)
+	// time.Sleep(6 * time.Second)
 
 	if ctx.Err() == context.Canceled {
 		log.Println("Request cancelled")
@@ -57,7 +57,7 @@ func (server *LaptopServer) CreateLaptop(
 	}
 
 	// save the laptop to in-memory
-	err := server.Store.Save(laptop)
+	err := server.LaptopStore.Save(laptop)
 	if err != nil {
 		code := codes.Internal
 		if errors.Is(err, fmt.Errorf("Laptop with id: %s already exists", laptop.Id)) {
@@ -73,3 +73,36 @@ func (server *LaptopServer) CreateLaptop(
 }
 
 func (server *LaptopServer) mustEmbedUnimplementedLaptopServiceServer() {}
+
+func (server *LaptopServer) SearchLaptop(
+	req *pcbook.SearchLaptopRequest,
+	stream pcbook.LaptopService_SearchLaptopServer,
+) error {
+	filter := req.GetFilter()
+	log.Printf("recieved a search-laptop request with filter: %v", filter)
+
+	err := server.LaptopStore.Search(
+		filter,
+		func(laptop *pcbook.Laptop) error {
+			res := &pcbook.SearchLaptopResponse{
+				Laptop: laptop,
+			}
+			err := stream.Send(res)
+			if err != nil {
+				return err
+			}
+
+			log.Printf("sent laptop with id: %s", laptop.GetId())
+			return nil
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not search the laptop: %w", err)
+	}
+
+	return nil
+}
+
+func (server *LaptopServer) UploadImage(stream pcbook.LaptopService_UploadImageServer) error {
+	return nil
+}

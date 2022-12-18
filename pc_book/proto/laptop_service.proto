@@ -1,6 +1,7 @@
 syntax = "proto3";
 package pcbook;
 
+import "proto/filter_message.proto";
 import "proto/laptop_message.proto";
 
 option go_package = "./;pcbook";
@@ -13,6 +14,33 @@ message CreateLaptopResponse {
   string id = 1;
 }
 
+message SearchLaptopRequest {
+  Filter filter = 1;
+}
+
+message SearchLaptopResponse {
+  Laptop laptop = 1;
+}
+
+message UploadImageRequest {
+  oneof data {
+    ImageInfo info = 1; // the first request contains the meta data
+    bytes chunk_data = 2; // the following requests will contain the chunks if data of the image
+  }
+}
+
+message ImageInfo {
+  string laptop_id = 1;
+  string image_type = 2;
+}
+
+message UploadImageResponse {
+  string id = 1;
+  uint32 size = 2; // total size of the image uploaded
+}
+
 service LaptopService {
   rpc CreateLaptop(CreateLaptopRequest) returns (CreateLaptopResponse) {}
+  rpc SearchLaptop(SearchLaptopRequest) returns (stream SearchLaptopResponse) {}
+  rpc UploadImage(stream UploadImageRequest) returns (UploadImageResponse) {}
 }
