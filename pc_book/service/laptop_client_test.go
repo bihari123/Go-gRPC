@@ -32,7 +32,7 @@ func TestClientCreateLaptop(t *testing.T) {
 	require.Equal(t, expectedID, res.Id)
 
 	// check that laptop is really saved into the server
-	other, err := laptopServer.Store.Find(laptop.Id)
+	other, err := laptopServer.LaptopStore.Find(laptop.Id)
 	require.NoError(t, err)
 	require.NotNil(t, other)
 
@@ -40,7 +40,10 @@ func TestClientCreateLaptop(t *testing.T) {
 }
 
 func startTestLaptopServer(t *testing.T) (*service.LaptopServer, string) {
-	laptopServer := service.NewLaptopServer(service.NewInMemoryLaptopStore())
+	laptopServer := service.NewLaptopServer(
+		service.NewInMemoryLaptopStore(),
+		service.NewDiskImageStore("img"),
+	)
 
 	grpcServer := grpc.NewServer()
 	pcbook.RegisterLaptopServiceServer(grpcServer, laptopServer)

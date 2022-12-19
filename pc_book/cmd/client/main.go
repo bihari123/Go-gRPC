@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"io"
 	"log"
+	"os"
+	"path/filepath"
 	pcbook "pcbook/proto"
 	"pcbook/sample"
 	"time"
@@ -14,9 +17,70 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func createLaptop(laptopClient pcbook.LaptopServiceClient) {
-	laptop := sample.NewLaptop()
+func uploadImage(laptopClient pcbook.LaptopServiceClient, laptopId string, imagePath string) {
+	file, err := os.Open(imagePath)
+	if err != nil {
+		log.Fatal("cannot open image file: ", err)
+	}
+	defer file.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	stream, err := laptopClient.UploadImage(ctx)
+	if err != nil {
+		log.Fatal("cannot upload image ", err)
+	}
+
+	req := &pcbook.UploadImageRequest{
+		Data: &pcbook.UploadImageRequest_Info{
+			Info: &pcbook.ImageInfo{
+				LaptopId:  laptopId,
+				ImageType: filepath.Ext(imagePath),
+			},
+		},
+	}
+
+	err = stream.Send(req)
+
+	if err != nil {
+		log.Fatal("cannot send image info: ", err)
+	}
+
+	reader := bufio.NewReader(file)
+	buffer := make([]byte, 1024)
+
+	for {
+		n, err := reader.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Fatal("cannot read chunk to buffer: ", err)
+		}
+
+		req := &pcbook.UploadImageRequest{
+			Data: &pcbook.UploadImageRequest_ChunkData{
+				ChunkData: buffer[:n],
+			},
+		}
+
+		err = stream.Send(req)
+		if err != nil {
+			log.Fatal("cannot recieve response: ", err)
+		}
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatal("cannot recieve response: ", err)
+	}
+	log.Printf("image uploaded with id: %s, size: %d", res.GetId(), res.GetSize())
+}
+
+func createLaptop(laptopClient pcbook.LaptopServiceClient, laptop *pcbook.Laptop) {
 	req := &pcbook.CreateLaptopRequest{
 		Laptop: laptop,
 	}
@@ -70,6 +134,12 @@ func searchLaptop(laptopClient pcbook.LaptopServiceClient, filter *pcbook.Filter
 	}
 }
 
+func testUploadImage(laptopClient pcbook.LaptopServiceClient) {
+	laptop := sample.NewLaptop()
+	createLaptop(laptopClient, laptop)
+	uploadImage(laptopClient, laptop.GetId(), "tmp/laptop.jpg")
+}
+
 func main() {
 	serverAddress := flag.String("address", "", "the server address")
 	flag.Parse()
@@ -82,8 +152,10 @@ func main() {
 
 	laptopClient := pcbook.NewLaptopServiceClient(conn)
 
+	testUploadImage(laptopClient)
+
 	for i := 0; i < 10; i++ {
-		createLaptop(laptopClient)
+		createLaptop(laptopClient, sample.NewLaptop())
 	}
 
 	filter := &pcbook.Filter{
