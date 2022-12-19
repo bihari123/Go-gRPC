@@ -76,6 +76,10 @@ func NewSSD() *pcbook.Storage {
 	return ssd
 }
 
+func RandomLaptopScore() float64 {
+	return float64(randomInt(1, 10))
+}
+
 func NewHDD() *pcbook.Storage {
 	ssd := &pcbook.Storage{
 		Driver: pcbook.Storage_HDD,

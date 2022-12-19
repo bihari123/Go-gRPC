@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -16,6 +17,63 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+func rateLaptop(
+	laptopClient pcbook.LaptopServiceClient,
+	laptopIDs []string,
+	scores []float64,
+) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	stream, err := laptopClient.RateLaptop(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot rate laptop: %v", err)
+	}
+
+	waitResponse := make(chan error)
+	// go routine to receive the responses
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				log.Println("no response")
+				waitResponse <- nil
+				return
+			}
+
+			if err != nil {
+				waitResponse <- fmt.Errorf("cannot receive stream response: %v", err)
+				return
+			}
+			log.Println("received response: ", res)
+		}
+	}()
+
+	// send request to the server
+	for i, laptopId := range laptopIDs {
+		req := &pcbook.RateLaptopRequest{
+			LaptopId: laptopId,
+			Score:    scores[i],
+		}
+
+		err := stream.Send(req)
+		if err != nil {
+			return fmt.Errorf("cannot send stream request: %v - %v", err, stream.RecvMsg(nil))
+		}
+
+		log.Print("sent request: ", req)
+
+	}
+	err = stream.CloseSend()
+	if err != nil {
+		return fmt.Errorf("cannot close send: %v", err)
+	}
+
+	err = <-waitResponse
+
+	return err
+}
 
 func uploadImage(laptopClient pcbook.LaptopServiceClient, laptopId string, imagePath string) {
 	file, err := os.Open(imagePath)

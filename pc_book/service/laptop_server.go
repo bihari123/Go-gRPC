@@ -19,11 +19,21 @@ const maxImageSize = 1 << 20
 type LaptopServer struct {
 	LaptopStore LaptopStore
 	ImageStore  ImageStore
+	RatingStore RatingStore
 	pcbook.UnimplementedLaptopServiceServer
 }
 
-func NewLaptopServer(laptopstore LaptopStore, imageStore ImageStore) *LaptopServer {
-	return &LaptopServer{laptopstore, imageStore, pcbook.UnimplementedLaptopServiceServer{}}
+func NewLaptopServer(
+	laptopstore LaptopStore,
+	imageStore ImageStore,
+	ratingStore RatingStore,
+) *LaptopServer {
+	return &LaptopServer{
+		laptopstore,
+		imageStore,
+		ratingStore,
+		pcbook.UnimplementedLaptopServiceServer{},
+	}
 }
 
 func (server *LaptopServer) CreateLaptop(
@@ -105,6 +115,57 @@ func (server *LaptopServer) SearchLaptop(
 	}
 
 	return nil
+}
+
+func (server *LaptopServer) RateLaptop(stream pcbook.LaptopService_RateLaptopServer) error {
+	for {
+
+		req, err := stream.Recv()
+
+		if err == io.EOF {
+			log.Println("no more data")
+		}
+
+		if err != nil {
+			return status.Errorf(codes.Unknown, "cannot recieve stream request %v", err)
+		}
+
+		laptopID := req.GetLaptopId()
+		score := req.GetScore()
+
+		log.Printf("received a rate-laptop request: %s, score: %.2f", laptopID, score)
+
+		found, err := server.LaptopStore.Find(laptopID)
+		if err != nil {
+			return status.Errorf(codes.Internal, "cannot find laptop %v", err)
+		}
+
+		if found == nil {
+			return status.Errorf(codes.NotFound, "laptop with id :%s not found", laptopID)
+		}
+
+		rating, err := server.RatingStore.Add(laptopID, score)
+		if err != nil {
+			return status.Errorf(codes.NotFound, "cannot add rating to the store", err)
+		}
+
+		res := &pcbook.RateLaptopResponse{
+			LaptopId:     laptopID,
+			RatedCount:   rating.Count,
+			AverageScore: rating.Sum / float64(rating.Count),
+		}
+
+		err = stream.Send(res)
+
+		if err != nil {
+			return status.Errorf(codes.Unknown, "cannot send the stream response", err)
+		}
+
+	}
+}
+
+func RandomLaptopScore() float64 {
+	return float64(sample.randomInt(1, 10))
 }
 
 func (server *LaptopServer) UploadImage(stream pcbook.LaptopService_UploadImageServer) error {

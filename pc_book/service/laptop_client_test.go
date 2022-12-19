@@ -43,6 +43,7 @@ func startTestLaptopServer(t *testing.T) (*service.LaptopServer, string) {
 	laptopServer := service.NewLaptopServer(
 		service.NewInMemoryLaptopStore(),
 		service.NewDiskImageStore("img"),
+		service.NewInMemoryratingStore(),
 	)
 
 	grpcServer := grpc.NewServer()

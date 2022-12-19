@@ -63,7 +63,11 @@ func TestServerCreateLaptop(t *testing.T) {
 			req := &pcbook.CreateLaptopRequest{
 				Laptop: tc.laptop,
 			}
-			server := service.NewLaptopServer(tc.store, service.NewDiskImageStore("img"))
+			server := service.NewLaptopServer(
+				tc.store,
+				service.NewDiskImageStore("img"),
+				service.NewInMemoryratingStore(),
+			)
 			res, err := server.CreateLaptop(context.Background(), req)
 
 			if tc.code == codes.OK {
